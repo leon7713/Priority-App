@@ -146,3 +146,126 @@ describe('useSearch', () => {
     expect(result.current.tracks).toEqual([])
   })
 })
+
+describe('useSearch pagination', () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it('exposes hasNext/hasPrevious straight from the cursors the api returns', async () => {
+    const search = vi.fn().mockResolvedValue({
+      tracks: [],
+      nextCursor: 'https://api.mixcloud.com/search/?offset=6',
+      previousCursor: null,
+    })
+    const api: SoundApi = { search }
+
+    const { result } = renderHook(() => useSearch(api, 'adele'))
+    await act(() => vi.advanceTimersByTimeAsync(300))
+
+    expect(result.current.hasNext).toBe(true)
+    expect(result.current.hasPrevious).toBe(false)
+  })
+
+  it('goNext requests using the cursor from the previous page, not an offset', async () => {
+    const search = vi
+      .fn()
+      .mockResolvedValueOnce({ tracks: [], nextCursor: 'CURSOR_PAGE_2', previousCursor: null })
+      .mockResolvedValueOnce({ tracks: [], nextCursor: null, previousCursor: 'CURSOR_BACK_TO_1' })
+    const api: SoundApi = { search }
+
+    const { result } = renderHook(() => useSearch(api, 'adele'))
+    await act(() => vi.advanceTimersByTimeAsync(300))
+
+    act(() => result.current.goNext())
+    await act(() => vi.advanceTimersByTimeAsync(0))
+
+    expect(search).toHaveBeenLastCalledWith('adele', 'CURSOR_PAGE_2', expect.anything())
+    expect(result.current.hasNext).toBe(false)
+    expect(result.current.hasPrevious).toBe(true)
+  })
+
+  it('goPrevious requests using the previous cursor from the current page', async () => {
+    const search = vi
+      .fn()
+      .mockResolvedValueOnce({ tracks: [], nextCursor: 'CURSOR_PAGE_2', previousCursor: null })
+      .mockResolvedValueOnce({ tracks: [], nextCursor: null, previousCursor: 'CURSOR_BACK_TO_1' })
+      .mockResolvedValueOnce({ tracks: [], nextCursor: 'CURSOR_PAGE_2', previousCursor: null })
+    const api: SoundApi = { search }
+
+    const { result } = renderHook(() => useSearch(api, 'adele'))
+    await act(() => vi.advanceTimersByTimeAsync(300))
+
+    act(() => result.current.goNext())
+    await act(() => vi.advanceTimersByTimeAsync(0))
+    act(() => result.current.goPrevious())
+    await act(() => vi.advanceTimersByTimeAsync(0))
+
+    expect(search).toHaveBeenLastCalledWith('adele', 'CURSOR_BACK_TO_1', expect.anything())
+  })
+
+  it('resets back to page 1 when a new search is made', async () => {
+    const search = vi
+      .fn()
+      .mockResolvedValueOnce({ tracks: [], nextCursor: 'CURSOR_PAGE_2', previousCursor: null })
+      .mockResolvedValueOnce({ tracks: [], nextCursor: null, previousCursor: null })
+      .mockResolvedValueOnce({ tracks: [], nextCursor: null, previousCursor: null })
+    const api: SoundApi = { search }
+
+    const { result, rerender } = renderHook(({ query }) => useSearch(api, query), {
+      initialProps: { query: 'adele' },
+    })
+    await act(() => vi.advanceTimersByTimeAsync(300))
+    act(() => result.current.goNext())
+    await act(() => vi.advanceTimersByTimeAsync(0))
+    expect(search).toHaveBeenLastCalledWith('adele', 'CURSOR_PAGE_2', expect.anything())
+
+    rerender({ query: 'queen' })
+    await act(() => vi.advanceTimersByTimeAsync(300))
+
+    expect(search).toHaveBeenLastCalledWith('queen', null, expect.anything())
+  })
+
+  it('ignores extra next/previous clicks while a page is already loading', async () => {
+    const first = deferred<SearchPage>()
+    const search = vi
+      .fn()
+      .mockResolvedValueOnce({ tracks: [], nextCursor: 'CURSOR_PAGE_2', previousCursor: null })
+      .mockReturnValueOnce(first.promise)
+    const api: SoundApi = { search }
+
+    const { result } = renderHook(() => useSearch(api, 'adele'))
+    await act(() => vi.advanceTimersByTimeAsync(300))
+
+    act(() => result.current.goNext())
+    await act(() => vi.advanceTimersByTimeAsync(0))
+    expect(search).toHaveBeenCalledTimes(2)
+
+    // page 2 is still loading (first.promise hasn't resolved) - clicking again
+    // must not fire more requests or skip ahead
+    act(() => result.current.goNext())
+    act(() => result.current.goPrevious())
+    expect(search).toHaveBeenCalledTimes(2)
+
+    await act(async () => {
+      first.resolve(page([]))
+      await first.promise
+    })
+  })
+
+  it('does nothing when there is no next or previous page', async () => {
+    const search = vi.fn().mockResolvedValue({ tracks: [], nextCursor: null, previousCursor: null })
+    const api: SoundApi = { search }
+
+    const { result } = renderHook(() => useSearch(api, 'adele'))
+    await act(() => vi.advanceTimersByTimeAsync(300))
+
+    act(() => result.current.goNext())
+    act(() => result.current.goPrevious())
+    expect(search).toHaveBeenCalledTimes(1)
+  })
+})
