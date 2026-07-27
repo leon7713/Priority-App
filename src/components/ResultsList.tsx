@@ -44,17 +44,24 @@ export function ResultsList({ status, tracks, error, onRetry, onSelect }: Result
   }
 
   return (
-    <ul className="results-list" aria-label="Search results">
-      {tracks.map((track) => (
-        <li key={track.id}>
-          <button type="button" className="result-item" onClick={(event) => handleClick(event, track)}>
-            {track.imageUrl && <img className="result-item__thumb" src={track.imageUrl} alt="" />}
-            <span>
-              {track.name} — {track.artist}
-            </span>
-          </button>
-        </li>
-      ))}
-    </ul>
+    <>
+      {/* list-style: none makes some screen readers (VoiceOver) drop the list
+          semantics entirely, so the roles below are added back explicitly */}
+      <p className="visually-hidden" role="status">
+        {tracks.length} result{tracks.length === 1 ? '' : 's'} found
+      </p>
+      <ul className="results-list" role="list" aria-label="Search results">
+        {tracks.map((track) => (
+          <li key={track.id} role="listitem">
+            <button type="button" className="result-item" onClick={(event) => handleClick(event, track)}>
+              {track.imageUrl && <img className="result-item__thumb" src={track.imageUrl} alt="" />}
+              <span>
+                {track.name} — {track.artist}
+              </span>
+            </button>
+          </li>
+        ))}
+      </ul>
+    </>
   )
 }

@@ -11,9 +11,9 @@ export function RecentSearches({ searches, onSelect }: RecentSearchesProps) {
   return (
     <section className="recent-searches" aria-label="Recent searches">
       <h2>Recent Searches</h2>
-      <ul>
+      <ul role="list">
         {searches.map((term) => (
-          <li key={term}>
+          <li key={term} role="listitem">
             <button type="button" onClick={() => onSelect(term)}>
               {term}
             </button>

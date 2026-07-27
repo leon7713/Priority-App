@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { Track } from './api/types'
 import { mixcloudApi } from './api/mixcloudClient'
 import { FlyingThumbnail } from './components/FlyingThumbnail'
@@ -56,6 +56,15 @@ function App() {
     }
     setFlight(null)
   }
+
+  // once a result lands in the image container, move focus there - keyboard
+  // and screen reader users would otherwise be left on a result button that
+  // just visually flew away
+  useEffect(() => {
+    if (selectedTrack) {
+      imageContainerRef.current?.querySelector('button')?.focus()
+    }
+  }, [selectedTrack])
 
   return (
     <div className="app">

@@ -11,7 +11,7 @@ export const ImageContainer = forwardRef<HTMLDivElement, ImageContainerProps>(fu
   ref,
 ) {
   return (
-    <div className="image-container" ref={ref}>
+    <div className="image-container" ref={ref} role="region" aria-label="Selected track">
       {track ? (
         <button
           type="button"

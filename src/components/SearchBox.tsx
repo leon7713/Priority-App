@@ -18,7 +18,9 @@ export function SearchBox({ value, onChange }: SearchBoxProps) {
 
   return (
     <form className="search-box" role="search" onSubmit={handleSubmit}>
-      <label htmlFor="search-input">Search</label>
+      <label className="visually-hidden" htmlFor="search-input">
+        Search
+      </label>
       <input
         id="search-input"
         type="text"
