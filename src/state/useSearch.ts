@@ -23,7 +23,12 @@ interface SearchRequest {
 // Debounces raw typing into a fresh "page 1" request. Clicking next/previous
 // bypasses the debounce entirely and reuses whatever cursor mixcloud gave us
 // on the last page - no offset math on our end.
-export function useSearch(api: SoundApi, query: string): UseSearchResult {
+//
+// `onSearch`, if given, fires once per debounced term - right when we
+// actually go looking for it, not on every keystroke and not again for
+// next/previous clicks. It's how recent-searches gets fed without this
+// hook needing to know recent-searches exists.
+export function useSearch(api: SoundApi, query: string, onSearch?: (term: string) => void): UseSearchResult {
   const [status, setStatus] = useState<SearchStatus>('idle')
   const [tracks, setTracks] = useState<Track[]>([])
   const [error, setError] = useState<string | null>(null)
@@ -45,6 +50,7 @@ export function useSearch(api: SoundApi, query: string): UseSearchResult {
     }
 
     const timer = setTimeout(() => {
+      onSearch?.(trimmed)
       setRequest({ query: trimmed, cursor: null })
     }, DEBOUNCE_MS)
 
@@ -52,6 +58,8 @@ export function useSearch(api: SoundApi, query: string): UseSearchResult {
       clearTimeout(timer)
       activeController.current?.abort()
     }
+    // onSearch is intentionally left out - it's usually an inline callback from
+    // the caller, and including it would restart the debounce on every render
   }, [query])
 
   useEffect(() => {

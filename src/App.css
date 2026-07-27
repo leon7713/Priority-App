@@ -48,3 +48,20 @@
 .pagination button {
   padding: 0.5rem 1rem;
 }
+
+.recent-searches {
+  margin-top: 2rem;
+  text-align: left;
+}
+
+.recent-searches ul {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.recent-searches button {
+  padding: 0.4rem 0.8rem;
+}

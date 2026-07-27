@@ -1,14 +1,17 @@
 import { useState } from 'react'
 import { mixcloudApi } from './api/mixcloudClient'
 import { Pagination } from './components/Pagination'
+import { RecentSearches } from './components/RecentSearches'
 import { ResultsList } from './components/ResultsList'
 import { SearchBox } from './components/SearchBox'
+import { useRecentSearches } from './state/useRecentSearches'
 import { useSearch } from './state/useSearch'
 import './App.css'
 
 function App() {
   const [query, setQuery] = useState('')
-  const { status, tracks, error, hasNext, hasPrevious, goNext, goPrevious } = useSearch(mixcloudApi, query)
+  const { recentSearches, addSearch } = useRecentSearches()
+  const { status, tracks, error, hasNext, hasPrevious, goNext, goPrevious } = useSearch(mixcloudApi, query, addSearch)
 
   return (
     <div className="app">
@@ -24,6 +27,7 @@ function App() {
           onNext={goNext}
         />
       )}
+      <RecentSearches searches={recentSearches} onSelect={setQuery} />
     </div>
   )
 }
