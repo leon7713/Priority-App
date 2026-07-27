@@ -7,6 +7,7 @@ import { Pagination } from './components/Pagination'
 import { RecentSearches } from './components/RecentSearches'
 import { ResultsList } from './components/ResultsList'
 import { SearchBox } from './components/SearchBox'
+import { TrackPlayer } from './components/TrackPlayer'
 import { useRecentSearches } from './state/useRecentSearches'
 import { useSearch } from './state/useSearch'
 import './App.css'
@@ -27,14 +28,22 @@ function App() {
   )
 
   const [selectedTrack, setSelectedTrack] = useState<Track | null>(null)
+  const [isPlaying, setIsPlaying] = useState(false)
   const [flight, setFlight] = useState<Flight | null>(null)
   const imageContainerRef = useRef<HTMLDivElement>(null)
+
+  function selectTrack(track: Track) {
+    setSelectedTrack(track)
+    // picking a different track should stop whatever was already embedded -
+    // the user has to click the (new) image to start playing it
+    setIsPlaying(false)
+  }
 
   function handleResultSelect(track: Track, sourceRect: DOMRect) {
     const container = imageContainerRef.current
     if (!container || !track.imageUrl) {
       // nothing sensible to animate towards/from - just show it
-      setSelectedTrack(track)
+      selectTrack(track)
       return
     }
 
@@ -43,7 +52,7 @@ function App() {
 
   function handleFlightDone() {
     if (flight) {
-      setSelectedTrack(flight.track)
+      selectTrack(flight.track)
     }
     setFlight(null)
   }
@@ -62,7 +71,8 @@ function App() {
           onNext={goNext}
         />
       )}
-      <ImageContainer ref={imageContainerRef} track={selectedTrack} />
+      <ImageContainer ref={imageContainerRef} track={selectedTrack} onImageClick={() => setIsPlaying(true)} />
+      {selectedTrack && isPlaying && <TrackPlayer track={selectedTrack} />}
       <RecentSearches searches={recentSearches} onSelect={setQuery} />
       {flight && (
         <FlyingThumbnail
