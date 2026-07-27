@@ -61,7 +61,7 @@ Each component takes data and callbacks as props and renders; none of them fetch
 - **The fly-to-image animation** (`FlyingThumbnail`) is done with plain CSS transitions and a FLIP-style rect measurement (`getBoundingClientRect` on the clicked result and the image container), rather than pulling in an animation library. It's a small enough effect that a dependency felt unnecessary.
 - **Playback** goes through Mixcloud's iframe widget (`TrackPlayer`) rather than an `<audio>` tag, because Mixcloud doesn't expose a raw audio URL - the widget is the only supported playback mechanism.
 - **Race conditions**: `useSearch` guards against stale responses in two ways - an `AbortController` per request (aborted the instant a newer request starts, even from a different effect via a shared ref) and a `cancelled` closure flag checked before every state update. Next/Previous clicks are also ignored outright while a request is already in flight, so rapid clicking can't get the page out of sync.
-- **Bonus 11 (tile/list toggle) was intentionally skipped** to keep scope focused on the mandatory requirements plus the other bonuses (accessibility, styling, and a decoupled/tested architecture).
+- **Bonus 11 (tile/list toggle) was skipped due to time constraints**, in favor of prioritizing the mandatory requirements plus the other bonuses (accessibility, styling, and a decoupled/tested architecture).
 
 ## Testing
 
