@@ -37,3 +37,14 @@
   padding: 0.5rem;
   border-bottom: 1px solid #e5e4e7;
 }
+
+.pagination {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  margin-top: 1rem;
+}
+
+.pagination button {
+  padding: 0.5rem 1rem;
+}

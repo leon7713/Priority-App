@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { SoundApi, Track } from '../api/types'
 
 const DEBOUNCE_MS = 300
@@ -9,54 +9,106 @@ export interface UseSearchResult {
   status: SearchStatus
   tracks: Track[]
   error: string | null
+  hasNext: boolean
+  hasPrevious: boolean
+  goNext: () => void
+  goPrevious: () => void
 }
 
-// Debounces `query`, fires it against the given api, and makes sure a slow
-// response from an old query can never clobber the results of a newer one.
-// Doesn't know anything about pagination yet - that gets layered on top
-// once this is wired into the results list.
+interface SearchRequest {
+  query: string
+  cursor: string | null
+}
+
+// Debounces raw typing into a fresh "page 1" request. Clicking next/previous
+// bypasses the debounce entirely and reuses whatever cursor mixcloud gave us
+// on the last page - no offset math on our end.
 export function useSearch(api: SoundApi, query: string): UseSearchResult {
   const [status, setStatus] = useState<SearchStatus>('idle')
   const [tracks, setTracks] = useState<Track[]>([])
   const [error, setError] = useState<string | null>(null)
+  const [nextCursor, setNextCursor] = useState<string | null>(null)
+  const [previousCursor, setPreviousCursor] = useState<string | null>(null)
+  const [request, setRequest] = useState<SearchRequest | null>(null)
+
+  // shared with the debounce effect below so a keystroke can kill whatever
+  // request is currently in flight, even though the two effects run separately
+  const activeController = useRef<AbortController | null>(null)
 
   useEffect(() => {
     const trimmed = query.trim()
 
     if (!trimmed) {
+      activeController.current?.abort()
+      setRequest(null)
+      return
+    }
+
+    const timer = setTimeout(() => {
+      setRequest({ query: trimmed, cursor: null })
+    }, DEBOUNCE_MS)
+
+    return () => {
+      clearTimeout(timer)
+      activeController.current?.abort()
+    }
+  }, [query])
+
+  useEffect(() => {
+    if (!request) {
       setStatus('idle')
       setTracks([])
       setError(null)
+      setNextCursor(null)
+      setPreviousCursor(null)
       return
     }
 
     let cancelled = false
     const controller = new AbortController()
+    activeController.current = controller
 
-    const timer = setTimeout(() => {
-      setStatus('loading')
-      setError(null)
+    setStatus('loading')
+    setError(null)
 
-      api
-        .search(trimmed, null, controller.signal)
-        .then((page) => {
-          if (cancelled) return
-          setTracks(page.tracks)
-          setStatus('success')
-        })
-        .catch((err) => {
-          if (cancelled || controller.signal.aborted) return
-          setError(err instanceof Error ? err.message : 'Something went wrong')
-          setStatus('error')
-        })
-    }, DEBOUNCE_MS)
+    api
+      .search(request.query, request.cursor, controller.signal)
+      .then((page) => {
+        if (cancelled || controller.signal.aborted) return
+        setTracks(page.tracks)
+        setNextCursor(page.nextCursor)
+        setPreviousCursor(page.previousCursor)
+        setStatus('success')
+      })
+      .catch((err) => {
+        if (cancelled || controller.signal.aborted) return
+        setError(err instanceof Error ? err.message : 'Something went wrong')
+        setStatus('error')
+      })
 
     return () => {
       cancelled = true
-      clearTimeout(timer)
       controller.abort()
     }
-  }, [api, query])
+  }, [api, request])
 
-  return { status, tracks, error }
+  function goNext() {
+    if (status === 'loading' || !request || nextCursor === null) return
+    setRequest({ query: request.query, cursor: nextCursor })
+  }
+
+  function goPrevious() {
+    if (status === 'loading' || !request || previousCursor === null) return
+    setRequest({ query: request.query, cursor: previousCursor })
+  }
+
+  return {
+    status,
+    tracks,
+    error,
+    hasNext: nextCursor !== null,
+    hasPrevious: previousCursor !== null,
+    goNext,
+    goPrevious,
+  }
 }
