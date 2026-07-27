@@ -110,6 +110,23 @@ describe('useSearch', () => {
     expect(result.current.error).toBe('network down')
   })
 
+  it('retry re-runs the same request after a failure', async () => {
+    const search = vi.fn().mockRejectedValueOnce(new Error('network down')).mockResolvedValueOnce(page(['Result 1']))
+    const api: SoundApi = { search }
+
+    const { result } = renderHook(() => useSearch(api, 'adele'))
+    await act(() => vi.advanceTimersByTimeAsync(300))
+    expect(result.current.status).toBe('error')
+
+    act(() => result.current.retry())
+    await act(() => vi.advanceTimersByTimeAsync(0))
+
+    expect(search).toHaveBeenCalledTimes(2)
+    expect(search).toHaveBeenLastCalledWith('adele', null, expect.anything())
+    expect(result.current.status).toBe('success')
+    expect(result.current.tracks).toHaveLength(1)
+  })
+
   it('does not treat a deliberate abort as an error', async () => {
     const search = vi.fn().mockImplementation((_query: string, _cursor, signal: AbortSignal) => {
       return new Promise((_resolve, reject) => {

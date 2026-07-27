@@ -13,6 +13,7 @@ export interface UseSearchResult {
   hasPrevious: boolean
   goNext: () => void
   goPrevious: () => void
+  retry: () => void
 }
 
 interface SearchRequest {
@@ -110,6 +111,12 @@ export function useSearch(api: SoundApi, query: string, onSearch?: (term: string
     setRequest({ query: request.query, cursor: previousCursor })
   }
 
+  function retry() {
+    if (!request) return
+    // same query + cursor, but a new object so the fetch effect re-runs
+    setRequest({ ...request })
+  }
+
   return {
     status,
     tracks,
@@ -118,5 +125,6 @@ export function useSearch(api: SoundApi, query: string, onSearch?: (term: string
     hasPrevious: previousCursor !== null,
     goNext,
     goPrevious,
+    retry,
   }
 }

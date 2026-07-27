@@ -5,26 +5,36 @@ interface ResultsListProps {
   status: SearchStatus
   tracks: Track[]
   error: string | null
+  onRetry: () => void
 }
 
-// Deliberately dumb - it just renders whatever state it's handed. Proper
-// loading/empty/error treatment (spinners, retry button, etc) comes later,
-// this is enough to see real results on the page for now.
-export function ResultsList({ status, tracks, error }: ResultsListProps) {
+export function ResultsList({ status, tracks, error, onRetry }: ResultsListProps) {
   if (status === 'idle') {
     return null
   }
 
   if (status === 'loading') {
-    return <p role="status">Searching...</p>
+    return (
+      <p className="status-message" role="status">
+        <span className="spinner" aria-hidden="true" />
+        Searching…
+      </p>
+    )
   }
 
   if (status === 'error') {
-    return <p role="alert">{error}</p>
+    return (
+      <div className="status-message status-message--error" role="alert">
+        <p>{error ?? 'Something went wrong.'}</p>
+        <button type="button" onClick={onRetry}>
+          Retry
+        </button>
+      </div>
+    )
   }
 
   if (tracks.length === 0) {
-    return <p>No results found.</p>
+    return <p className="status-message">No results found. Try a different search.</p>
   }
 
   return (

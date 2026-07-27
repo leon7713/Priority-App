@@ -11,13 +11,17 @@ import './App.css'
 function App() {
   const [query, setQuery] = useState('')
   const { recentSearches, addSearch } = useRecentSearches()
-  const { status, tracks, error, hasNext, hasPrevious, goNext, goPrevious } = useSearch(mixcloudApi, query, addSearch)
+  const { status, tracks, error, hasNext, hasPrevious, goNext, goPrevious, retry } = useSearch(
+    mixcloudApi,
+    query,
+    addSearch,
+  )
 
   return (
     <div className="app">
       <h1>Priority App</h1>
       <SearchBox value={query} onChange={setQuery} />
-      <ResultsList status={status} tracks={tracks} error={error} />
+      <ResultsList status={status} tracks={tracks} error={error} onRetry={retry} />
       {status !== 'idle' && (
         <Pagination
           hasPrevious={hasPrevious}
