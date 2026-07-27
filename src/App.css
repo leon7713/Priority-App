@@ -4,3 +4,36 @@
   padding: 2rem;
   text-align: center;
 }
+
+.search-box {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+}
+
+.search-box label {
+  position: absolute;
+  left: -9999px;
+}
+
+.search-box input {
+  flex: 1;
+  padding: 0.5rem;
+  font-size: 1rem;
+}
+
+.search-box button {
+  padding: 0.5rem 1rem;
+}
+
+.results-list {
+  list-style: none;
+  padding: 0;
+  margin: 1.5rem 0 0;
+  text-align: left;
+}
+
+.results-list li {
+  padding: 0.5rem;
+  border-bottom: 1px solid #e5e4e7;
+}
